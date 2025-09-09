@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{ employer.name }}</title></head>
+<body class="container py-5">
+  <h2 class="mb-1">{{ employer.name }}</h2>
+  <p class="text-muted">
+    {{ employer.location }} •
+    <a href="{{ employer.website }}" target="_blank">{{ employer.website }}</a><br>
+    Contact: {{ employer.contact_name }} — {{ employer.contact_email }} — {{ employer.contact_phone }}
+  </p>
+  <p>
+    <a href="{% url 'employer_edit' employer.pk %}" class="btn btn-sm btn-outline-primary">Edit Employer</a>
+    <a href="{% url 'position_create' %}" class="btn btn-sm btn-primary">+ New Position</a>
+  </p>
+
+  <hr>
+  <h4>Positions</h4>
+  <div class="list-group">
+    {% for p in positions %}
+      <a class="list-group-item list-group-item-action" href="{% url 'position_detail' p.pk %}">
+        <strong>{{ p.title }}</strong> — status: <em>{{ p.status }}</em>
+        <div class="small text-muted">Created {{ p.created_at }}</div>
+      </a>
+    {% empty %}
+      <div class="list-group-item">No positions yet.</div>
+    {% endfor %}
+  </div>
+</body>
+</html>

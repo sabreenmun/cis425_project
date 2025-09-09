@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Employers</title></head>
+<body class="container py-5">
+  <h2>Employers</h2>
+  <p><a class="btn btn-sm btn-primary" href="{% url 'employer_create' %}">+ New Employer</a></p>
+  <ul class="list-group">
+    {% for e in employers %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span>{{ e.name }}{% if e.location %} — {{ e.location }}{% endif %}</span>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'employer_detail' e.pk %}">Open</a>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No employers yet.</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

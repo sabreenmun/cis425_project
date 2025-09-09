@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{ position.title }}</title></head>
+<body class="container py-5">
+  <h2>{{ position.title }} <small class="text-muted"> @ {{ position.employer.name }}</small></h2>
+  <p>Status: <strong>{{ position.status }}</strong></p>
+
+  <p>
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'position_edit' position.pk %}">Edit</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'position_change_status' position.pk 'open' %}">Mark Open</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'position_change_status' position.pk 'closed' %}">Mark Closed</a>
+    {% if pending_allowed %}
+      <a class="btn btn-sm btn-primary" href="{% url 'position_mark_pending' position.pk %}">Select Candidate / Mark Pending</a>
+    {% endif %}
+  </p>
+
+  <hr>
+  <h4>Description</h4>
+  <p>{{ position.description|linebreaks }}</p>
+  <ul>
+    <li><strong>Weeks:</strong> {{ position.weeks }}</li>
+    <li><strong>Hours/Week:</strong> {{ position.hours_per_week }}</li>
+    <li><strong>Location:</strong> {{ position.location }}</li>
+    <li><strong>Majors of Interest:</strong> {{ position.majors_of_interest }}</li>
+    <li><strong>Required Skills:</strong> {{ position.required_skills }}</li>
+    <li><strong>Preferred Skills:</strong> {{ position.preferred_skills }}</li>
+    <li><strong>Salary:</strong> {{ position.salary }}</li>
+  </ul>
+
+  <hr>
+  <h4>Applicants</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Student</th><th>Email</th><th>GPA</th><th>Resume</th><th>Status</th><th>Applied</th></tr></thead>
+    <tbody>
+      {% for app in applications %}
+        <tr>
+          <td>{{ app.student.name }}</td>
+          <td>{{ app.student.email }}</td>
+          <td>{{ app.student.gpa }}</td>
+          <td>
+            {% if app.student.resume %}
+              <a href="{{ app.student.resume.url }}" target="_blank">View Resume</a>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>{{ app.status }}</td>
+          <td>{{ app.applied_at }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No applications yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if position.offer_letter %}
+    <p><strong>Offer Letter on file:</strong> <a href="{{ position.offer_letter.url }}" target="_blank">Download</a></p>
+  {% endif %}
+  {% if position.selected_student %}
+    <p><strong>Selected Student:</strong> {{ position.selected_student.name }} ({{ position.selected_student.email }})</p>
+  {% endif %}
+</body>
+</html>

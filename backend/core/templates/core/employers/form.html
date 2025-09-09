@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{ title }}</title></head>
+<body class="container py-5">
+  <h2>{{ title }}</h2>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary">Save</button>
+    <a href="{% url 'employer_list' %}" class="btn btn-link">Cancel</a>
+  </form>
+</body>
+</html>

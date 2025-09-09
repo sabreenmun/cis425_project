@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Mark Pending — {{ position.title }}</title></head>
+<body class="container py-5">
+  <h2>Mark "{{ position.title }}" as Pending</h2>
+  <p>Select the hired student and upload the offer letter. This will also evaluate co-op eligibility and email the student if eligible.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary">Save & Run Eligibility</button>
+    <a href="{% url 'position_detail' position.pk %}" class="btn btn-link">Cancel</a>
+  </form>
+</body>
+</html>

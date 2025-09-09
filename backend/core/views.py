@@ -1,27 +1,160 @@
 # backend/core/views.py
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.conf import settings
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
-# main page
+from .forms import EmployerForm, PositionForm, MarkPendingForm
+from .models import Employer, Position, Application, Student, Coop
+
+# home page
 def home(request):
-    # matches: backend/core/templates/core/home.html
     return render(request, "core/home.html")
 
+# portals
+def student_portal(request):
+    return render(request, "core/student/portal.html")
+def employer_portal(request):
+    return render(request, "core/employers/portal.html")
+def faculty_portal(request):
+    return render(request, "core/faculty/portal.html")
 
-# for student section
-def student_search(request):
-    return render(request, "core/student/search.html")
 
-# for employer section
-def employer_positions(request):
-    return render(request, "core/employer/positions.html")
+# employee functionality
+def employer_list(request):
+    employers = Employer.objects.all().order_by("name")
+    return render(request, "core/employers/list.html", {"employers": employers})
 
-# for faculty section
-def faculty_dashboard(request):
-    return render(request, "core/faculty/dashboard.html")
+def employer_create(request):
+    if request.method == "POST":
+        form = EmployerForm(request.POST)
+        if form.is_valid():
+            emp = form.save()
+            messages.success(request, "Employer created.")
+            return redirect("employer_detail", pk=emp.pk)
+    else:
+        form = EmployerForm()
+    return render(request, "core/employers/form.html", {"form": form, "title": "Create Employer"})
 
-# (optional) fake login/logout for later
-def login_view(request):
-    return HttpResponse("Login placeholder")
-def logout_view(request):
-    return redirect("home")
+def employer_detail(request, pk):
+    employer = get_object_or_404(Employer, pk=pk)
+    positions = employer.positions.all().order_by("-created_at")
+    return render(request, "core/employers/detail.html", {"employer": employer, "positions": positions})
+
+def employer_edit(request, pk):
+    employer = get_object_or_404(Employer, pk=pk)
+    if request.method == "POST":
+        form = EmployerForm(request.POST, instance=employer)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Employer updated.")
+            return redirect("employer_detail", pk=employer.pk)
+    else:
+        form = EmployerForm(instance=employer)
+    return render(request, "core/employers/form.html", {"form": form, "title": f"Edit {employer.name}"})
+
+# position functionality
+def position_create(request):
+    if request.method == "POST":
+        form = PositionForm(request.POST)
+        if form.is_valid():
+            pos = form.save()
+            messages.success(request, "Position created.")
+            return redirect("position_detail", pk=pos.pk)
+    else:
+        form = PositionForm()
+    return render(request, "core/positions/form.html", {"form": form, "title": "Create Position"})
+
+def position_edit(request, pk):
+    position = get_object_or_404(Position, pk=pk)
+    if request.method == "POST":
+        form = PositionForm(request.POST, instance=position)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Position updated.")
+            return redirect("position_detail", pk=position.pk)
+    else:
+        form = PositionForm(instance=position)
+    return render(request, "core/positions/form.html", {"form": form, "title": f"Edit {position.title}"})
+
+def position_detail(request, pk):
+    position = get_object_or_404(Position, pk=pk)
+    apps = position.applications.select_related("student").order_by("-applied_at")
+    return render(request, "core/positions/detail.html", {
+        "position": position,
+        "applications": apps,
+        "pending_allowed": position.status in ("open", "pending"),
+    })
+
+def position_change_status(request, pk, new_status):
+    position = get_object_or_404(Position, pk=pk)
+    if new_status not in dict(Position.STATUS):
+        messages.error(request, "Invalid status.")
+        return redirect("position_detail", pk=position.pk)
+    position.status = new_status
+    position.save(update_fields=["status"])
+    messages.success(request, f"Position marked as {new_status}.")
+    return redirect("position_detail", pk=position.pk)
+
+# hiring functionality
+
+def _is_eligible_for_coop(student: Student, position: Position) -> bool:
+    if float(student.gpa) < 2.0:
+        return False
+    if position.weeks < 7:
+        return False
+    if (position.weeks * position.hours_per_week) < 140:
+        return False
+    if student.is_transfer:
+        return student.semesters_completed >= 1
+    return student.semesters_completed >= 2
+
+@transaction.atomic
+def position_mark_pending(request, pk):
+    position = get_object_or_404(Position, pk=pk)
+    if request.method == "POST":
+        form = MarkPendingForm(request.POST, request.FILES)
+        if form.is_valid():
+            sel_student = form.cleaned_data["selected_student"]
+            offer = form.cleaned_data["offer_letter"]
+
+            position.selected_student = sel_student
+            position.offer_letter = offer
+            position.status = "pending"
+            position.save()
+
+            coop, _ = Coop.objects.get_or_create(student=sel_student, position=position)
+            coop.eligible = _is_eligible_for_coop(sel_student, position)
+            coop.indicated_interest = False
+            coop.save()
+
+            try:
+                if coop.eligible and sel_student.email:
+                    send_mail(
+                        subject="Co-op Eligibility Notice",
+                        message=(
+                            f"Hi {sel_student.name},\n\n"
+                            f"You've been selected for the position '{position.title}' at {position.employer.name}.\n"
+                            "You are ELIGIBLE for co-op credit. Please log in to the portal and indicate your interest."
+                        ),
+                        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                        recipient_list=[sel_student.email],
+                        fail_silently=True,
+                    )
+            except Exception:
+                pass
+
+            messages.success(request, "Position marked as pending and eligibility processed.")
+            return redirect("position_detail", pk=position.pk)
+    else:
+        form = MarkPendingForm()
+
+    applied_student_ids = position.applications.values_list("student_id", flat=True)
+    form.fields["selected_student"].queryset = Student.objects.filter(id__in=applied_student_ids)
+
+    return render(request, "core/positions/mark_pending.html", {
+        "position": position,
+        "form": form
+    })
