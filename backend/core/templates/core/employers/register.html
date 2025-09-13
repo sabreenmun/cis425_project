@@ -1,0 +1,15 @@
+{% load static %}
+
+<main class="container py-5">
+  <h1 class="mb-4 text-center">Employer Registration</h1>
+
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Register</button>
+  </form>
+
+  <p class="mt-3 text-center">
+    Already have an account? <a href="{% url 'employer_login' %}">Login here</a>.
+  </p>
+</main>

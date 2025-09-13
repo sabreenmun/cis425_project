@@ -24,3 +24,11 @@ class MarkPendingForm(forms.Form):
         label="Selected Student"
     )
     offer_letter = forms.FileField(required=True, label="Offer Letter (PDF or image)")
+
+
+class EmployerRegisterForm(forms.Form):
+    company_name = forms.CharField(max_length=100)
+    contact_name = forms.CharField(max_length=100)
+    email = forms.EmailField()
+    phone = forms.CharField(max_length=20)
+    password = forms.CharField(widget=forms.PasswordInput)

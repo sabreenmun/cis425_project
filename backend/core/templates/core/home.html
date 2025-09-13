@@ -1,27 +1,31 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>CIS 425 Co-op System</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body class="bg-light">
+{% load static %}
 
-  <nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="/">CIS 425 Co-op System</a>
+<main class="container py-5 text-center">
+  <h1 class="mb-4">Co-op Management System</h1>
+  <p class="lead mb-5">Choose your role to continue:</p>
+
+  <div class="row justify-content-center gap-3">
+
+    <!-- Student -->
+    <div class="col-md-3">
+      <h4>Student</h4>
+      <a class="btn btn-primary btn-sm mb-2" href="{% url 'students_login' %}">Login</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'students_register' %}">Register</a>
     </div>
-  </nav>
 
-  <main class="container py-5 text-center">
-    <h1 class="mb-4">Co-op Management System</h1>
-    <p class="lead mb-5">Choose a role to continue:</p>
-    <div class="d-flex justify-content-center gap-3">
-      <a class="btn btn-primary btn-lg" href="{% url 'student_portal' %}">Student Portal</a>
-      <a class="btn btn-outline-primary btn-lg" href="{% url 'employer_portal' %}">Employer Portal</a>
-      <a class="btn btn-outline-secondary btn-lg" href="{% url 'faculty_portal' %}">Faculty Portal</a>
+    <!-- Faculty -->
+    <div class="col-md-3">
+      <h4>Faculty</h4>
+      <a class="btn btn-primary btn-sm mb-2" href="{% url 'faculty_login' %}">Login</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'faculty_register' %}">Register</a>
     </div>
-  </main>
 
-</body>
-</html>
+    <!-- Employer -->
+    <div class="col-md-3">
+      <h4>Employer</h4>
+      <a class="btn btn-primary btn-sm mb-2" href="{% url 'employer_login' %}">Login</a>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'employer_register' %}">Register</a>
+    </div>
+
+  </div>
+</main>

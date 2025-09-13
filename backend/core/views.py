@@ -6,7 +6,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from .forms import EmployerForm, PositionForm, MarkPendingForm
+from .forms import EmployerForm, PositionForm, MarkPendingForm, EmployerRegisterForm
 from .models import Employer, Position, Application, Student, Coop
 
 # home page
@@ -15,28 +15,51 @@ def home(request):
 
 # portals
 def student_portal(request):
-    return render(request, "core/student/portal.html")
+    return render(request, "core/students/portal.html")
 def employer_portal(request):
     return render(request, "core/employers/portal.html")
 def faculty_portal(request):
     return render(request, "core/faculty/portal.html")
 
+def students_login(request):
+    return render(request, "core/students/login.html")
+def students_register(request):
+    return render(request, "core/students/register.html")
+# Faculty views
+def faculty_login(request):
+    return render(request, "core/faculty/login.html")
 
-# employee functionality
+def faculty_register(request):
+    return render(request, "core/faculty/register.html")
+
+def employer_login(request):
+    return render(request, "core/employers/login.html")
+
+def employer_register(request):
+    return render(request, "core/employers/register.html", {"form": form})
+
 def employer_list(request):
     employers = Employer.objects.all().order_by("name")
     return render(request, "core/employers/list.html", {"employers": employers})
 
-def employer_create(request):
+def employer_register(request):
     if request.method == "POST":
-        form = EmployerForm(request.POST)
+        form = EmployerRegisterForm(request.POST)
         if form.is_valid():
-            emp = form.save()
-            messages.success(request, "Employer created.")
-            return redirect("employer_detail", pk=emp.pk)
+            # Create and save the employer
+            Employer.objects.create(
+                name=form.cleaned_data["company_name"],
+                contact_name=form.cleaned_data["contact_name"],
+                contact_email=form.cleaned_data["email"],
+                contact_phone=form.cleaned_data["phone"],
+                # Optionally hash the password
+                password=make_password(form.cleaned_data["password"])
+            )
+            return redirect("employer_login")  # Redirect after successful registration
     else:
-        form = EmployerForm()
-    return render(request, "core/employers/form.html", {"form": form, "title": "Create Employer"})
+        form = EmployerRegisterForm()
+    
+    return render(request, "employers/register.html", {"form": form})
 
 def employer_detail(request, pk):
     employer = get_object_or_404(Employer, pk=pk)
